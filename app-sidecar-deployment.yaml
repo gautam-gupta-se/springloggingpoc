@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app-logging-poc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-app
+  template:
+    metadata:
+      labels:
+        app: spring-app
+    spec:
+      volumes:
+      - name: shared-logs
+        emptyDir: {}
+
+      containers:
+      # Container 1: The Spring Boot App
+      - name: spring-app
+        image: local/spring-gradle-app:1.0
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: shared-logs
+          mountPath: /var/log/app
+
+      # Container 2: Splunk Universal Forwarder Sidecar
+      - name: splunk-sidecar
+        image: splunk/universalforwarder:9.3
+        # Running explicitly as root stops the internal Ansible wrapper from calling 'sudo'
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        env:
+        - name: SPLUNK_GENERAL_TERMS
+          value: "--accept-sgt-current-at-splunk-com"
+        - name: SPLUNK_START_ARGS
+          value: "--accept-license"
+        - name: SPLUNK_USER
+          value: "root"
+        - name: SPLUNK_PASSWORD
+          value: "SidecarPassword123"
+        - name: SPLUNK_STANDALONE_URL
+          value: "192.168.1.34:9997" # <-- Replace this with your actual Mac IP (from ipconfig getifaddr en0)
+        - name: SPLUNK_ADD_MONITOR
+          value: "/var/log/app/spring-app.log"
+        - name: SPLUNK_MONITOR_INDEX
+          value: "main"
+        volumeMounts:
+        - name: shared-logs
+          mountPath: /var/log/app

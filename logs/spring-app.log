@@ -1,0 +1,12 @@
+2026-06-18 02:21:53 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - Starting SpringlogingpocApplicationTests using Java 21.0.11 with PID 33363 (started by gautam in /Users/gautam/Desktop/kubernetes-demo/springlogingpoc)
+2026-06-18 02:21:53 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2026-06-18 02:21:54 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - Started SpringlogingpocApplicationTests in 0.357 seconds (process running for 0.688)
+2026-06-18 02:22:03 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - Starting SpringlogingpocApplicationTests using Java 21.0.11 with PID 33366 (started by gautam in /Users/gautam/Desktop/kubernetes-demo/springlogingpoc)
+2026-06-18 02:22:03 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2026-06-18 02:22:04 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - Started SpringlogingpocApplicationTests in 0.321 seconds (process running for 0.661)
+2026-06-18 02:25:35 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - Starting SpringlogingpocApplicationTests using Java 21.0.11 with PID 33419 (started by gautam in /Users/gautam/Desktop/kubernetes-demo/springlogingpoc)
+2026-06-18 02:25:35 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2026-06-18 02:25:35 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - Started SpringlogingpocApplicationTests in 0.326 seconds (process running for 0.667)
+2026-06-18 02:27:31 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - Starting SpringlogingpocApplicationTests using Java 21.0.11 with PID 33876 (started by gautam in /Users/gautam/Desktop/kubernetes-demo/springlogingpoc)
+2026-06-18 02:27:31 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2026-06-18 02:27:31 [Test worker] INFO  c.e.s.SpringlogingpocApplicationTests - Started SpringlogingpocApplicationTests in 0.318 seconds (process running for 0.661)
