@@ -13,11 +13,8 @@ spec:
         app: spring-app
     spec:
       volumes:
-        # Volume 1: Shared logs folder
+        # We ONLY need the single shared log volume now
         - name: shared-logs
-          emptyDir: {}
-        # Volume 2: Writable directory scratchpad for Splunk config
-        - name: splunk-config-dir
           emptyDir: {}
 
       containers:
@@ -35,16 +32,6 @@ spec:
           securityContext:
             runAsUser: 0
             runAsGroup: 0
-          # A postStart hook writes the file into our writable volume *after* mounting
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - |
-                    mkdir -p /opt/splunkforwarder/etc/apps/search/local/
-                    echo -e "[monitor:///var/log/app]\ndisabled = false\nindex = main" > /opt/splunkforwarder/etc/apps/search/local/inputs.conf
           env:
             - name: SPLUNK_GENERAL_TERMS
               value: "--accept-sgt-current-at-splunk-com"
@@ -56,9 +43,9 @@ spec:
               value: "SidecarPassword123"
             - name: SPLUNK_STANDALONE_URL
               value: "192.168.1.34:9997"
+            # This init script creates the monitoring file safely inside Splunk's internal folder *after* boot permissions clear
+            - name: SPLUNK_INITSCRIPT
+              value: "mkdir -p /opt/splunkforwarder/etc/apps/search/local && echo -e '[monitor:///var/log/app]\ndisabled = false\nindex = main' > /opt/splunkforwarder/etc/apps/search/local/inputs.conf"
           volumeMounts:
             - name: shared-logs
               mountPath: /var/log/app
-            # Mount our writable emptyDir directly over the target configuration directory
-            - name: splunk-config-dir
-              mountPath: /opt/splunkforwarder/etc/apps/search/local

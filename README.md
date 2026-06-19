@@ -154,6 +154,39 @@ index=main "this is default controller"
   - Check the sidecar logs (`kubectl logs ... -c splunk-sidecar`) for connection errors.
   - If using KIND and running Splunk on your host, ensure `host.docker.internal` is resolvable from the cluster. For kind, host.docker.internal is supported if Docker on the host supports it; otherwise prefer running Splunk inside the cluster.
 
+### Why we modified the deployment (race condition & ownership issues)
+
+During testing we observed the Splunk Universal Forwarder (UF) sometimes did not monitor the application log path because of a race and a ConfigMap ownership issue:
+
+- Race condition: if the UF starts before the Spring container has created the `/var/log/app/spring-app.log` file, a file-specific monitor may be missed. Monitoring the directory is more robust, but the configuration must be present before UF provisioning finishes.
+- Ownership/ConfigMap issue: mounting a ConfigMap over `/opt/splunkforwarder/etc/system/local` can replace the directory with a read-only mount. The UF's Ansible provisioning tries to chown/chgrp that directory and fails (you saw `chgrp failed` and Ansible retrying), which delays or breaks startup.
+
+Changes made in this repo to mitigate these problems:
+
+- We changed `inputs.conf` to monitor the directory (`[monitor:///var/log/app/]`) so rotated/new files are picked up instead of relying on a single file path.
+- We switched from mounting the whole ConfigMap directory to mounting a single `inputs.conf` file via `subPath` (or using an init container in the optimized manifest). This prevents masking the `system/local` directory and avoids `chgrp` failures during provisioning.
+- We added an option that ensures the log file exists early (a `postStart` lifecycle on the `spring-app` container that `touch`es the file) so the file path is present when UF registers monitors.
+- An optimized manifest (`app-sidecar-deployment-optimized.yaml`) is provided that uses an init container to write `inputs.conf` into an `emptyDir` before the UF starts — this guarantees the UF starts with the config already present and avoids ConfigMap-related ownership issues.
+
+ Verified the forwarder manually after these changes using the CLI:
+
+```bash
+kubectl exec -it deployment/spring-app-logging-poc -c splunk-sidecar -- /opt/splunkforwarder/bin/splunk list monitor -auth admin:SidecarPassword123
+```
+
+That command showed `/var/log/app/spring-app.log` in the monitored files, confirming the UF can read and forward the file.
+
+Alternate options (summary)
+
+- Monitor the directory instead of a single file (preferred): reduces issues with rotated files or late file creation. We implemented this in `inputs.conf`.
+- Init container to write `inputs.conf` (recommended): guarantees configuration exists before UF provisioning starts (`app-sidecar-deployment-optimized.yaml`).
+- `postStart` lifecycle on the app container (minimal change): ensure the log path/file exists early by creating/touching it (this prevents file-not-found monitors).
+- Mount `inputs.conf` as a single file with `subPath` instead of mounting the whole ConfigMap directory (prevents read-only masking and chgrp failures).
+- Automate `splunk add monitor` at runtime (scripted): run the CLI to add monitor after UF is up — works but is less declarative than ConfigMap/init container approaches.
+- Use Splunk Connect for Kubernetes (SC4K) or Fluent Bit/Fluentd: production-grade alternatives that avoid per-pod UF sidecars and integrate better with k8s metadata and HEC.
+
+If you want, I can add the `postStart` snippet directly into `app-sidecar-deployment.yaml` in the repo so deployments created from this manifest always ensure the file exists. Alternatively I can update the README to show the exact `kubectl patch` command to add the lifecycle to an existing deployment.
+
 ## Extra: Deploy Splunk Enterprise in Kubernetes (example sketch)
 - You can avoid host networking issues by deploying Splunk as a Deployment + Service inside the same cluster. Then change the sidecar `SPLUNK_STANDALONE_URL` to `splunk-enterprise:9997` (service name). A production-ready Splunk on k8s deployment is more complex — this is only for local testing.
 
